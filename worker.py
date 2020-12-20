@@ -2,11 +2,12 @@ import os
 import re
 import json
 import jieba
+from tqdm import tqdm
 import jieba.analyse
 import time, datetime
 from collections import defaultdict
 
-CSV_PATH = 'yihang.csv'
+CSV_PATH = 'sum.csv'
 JSON_PATH = 'report.json'
 pattern = re.compile("^[0-9a-z]+$")
 data_format = "%Y/%m/%d %H:%M"
@@ -14,7 +15,6 @@ DELETE_KEYS = [' ', '我', '了', '你', '的']
 
 
 def analysis(msg_list):
-    print('start')
     most_num = -1
     least_num = -1
     day = ''
@@ -29,10 +29,11 @@ def analysis(msg_list):
     call_hour = 0
     call_min = 0
     call_sec = 0
+    word_num = 0
     day_messages = {}
     all_msgs = ''
     analysis_json = {'total': len(msg_list), 'most': {}, 'least': {}}
-    for msgs in msg_list:
+    for msgs in tqdm(msg_list):
         tags = msgs[0].split(',')
         date = datetime.datetime.strptime(tags[2], data_format)
         today = date.strftime('%Y/%m/%d')
@@ -80,6 +81,7 @@ def analysis(msg_list):
             call_sec += int(call_time[-1])
         else:
             all_msgs += msgs[1]
+            word_num += len(msgs[1])
             cut_msg = jieba.cut(msgs[1].strip())
             # print(msg)
             # print(cut_msg)
@@ -90,14 +92,14 @@ def analysis(msg_list):
                     continue
                 cut_content[m] += 1
     cut_content = sorted(cut_content.items(), key=lambda d: d[1], reverse=True)
-    print(json.dumps(cut_content, indent=4, ensure_ascii=False))
-    keywords = jieba.analyse.extract_tags(all_msgs, topK=50, withWeight=True)
-    for k in keywords:
-        print(k[0], k[1])
+    hour = sorted(hour.items(), key=lambda d: d[0])
+    month = sorted(month.items(), key=lambda d: d[0])
+    # print(json.dumps(cut_content, indent=4, ensure_ascii=False))
     call_min += int(call_sec / 60)
     call_sec = call_sec % 60
     call_hour += int(call_min / 60)
     call_min = call_min % 60
+    analysis_json['words'] = word_num
     analysis_json['emoticons'] = emoticons
     analysis_json['pictures'] = pictures
     analysis_json['videos'] = videos
@@ -110,6 +112,10 @@ def analysis(msg_list):
     analysis_json['day2msg'] = day_messages
     analysis_json['month'] = month
     analysis_json['hour'] = hour
+    analysis_json['keywords'] = jieba.analyse.extract_tags(all_msgs,
+                                                           topK=50,
+                                                           withWeight=True)
+    analysis_json['cut'] = cut_content
     return analysis_json
 
 
@@ -128,4 +134,4 @@ if __name__ == '__main__':
     msg_json['send'] = analysis(send_list)
     # print(json.dumps(msg_json, indent=4))
     with open(JSON_PATH, 'w') as f:
-        json.dump(msg_json, f, indent=4)
+        json.dump(msg_json, f, indent=4, ensure_ascii=False)

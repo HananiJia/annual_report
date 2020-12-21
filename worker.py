@@ -116,6 +116,7 @@ def analysis(msg_list):
                                                            topK=50,
                                                            withWeight=True)
     analysis_json['cut'] = cut_content
+    analysis_json['all_msg'] = all_msgs
     return analysis_json
 
 

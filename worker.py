@@ -131,8 +131,23 @@ if __name__ == '__main__':
             send_list.append(r.split('已发送,'))
     f.close()
     msg_json = {'time': time.time()}
-    msg_json['receive'] = analysis(receive_list)
-    msg_json['send'] = analysis(send_list)
+    receive_dict = analysis(receive_list)
+    send_dict = analysis(send_list)
+    msg_json['receive'] = receive_dict
+    msg_json['send'] = send_dict
+    msg_json['total'] = {
+        'total' : receive_dict['total']  + send_dict['total'],
+        'words' : receive_dict['words'] + send_dict['words'],
+        'emoticons' : receive_dict['emoticons'] + send_dict['emoticons'],
+        'pictures' : receive_dict['pictures'] + send_dict['pictures'],
+        'videos' : receive_dict['videos'] + send_dict['videos'],
+        'calls':{
+            '#calls' : receive_dict['calls']['#calls'] + send_dict['calls']['#calls'],
+            'hours' : receive_dict['calls']['hours'] + send_dict['calls']['hours'],
+            'minute': receive_dict['calls']['minute'] + send_dict['calls']['minute'],
+            'second' : receive_dict['calls']['second'] + send_dict['calls']['second']
+        }
+    }
     # print(json.dumps(msg_json, indent=4))
     with open(JSON_PATH, 'w') as f:
         json.dump(msg_json, f, indent=4, ensure_ascii=False)

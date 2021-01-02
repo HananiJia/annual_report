@@ -8,7 +8,7 @@ import time, datetime
 from collections import defaultdict
 
 CSV_PATH = 'sum.csv'
-JSON_PATH = 'report.json'
+JSON_PATH = 'report_new.json'
 pattern = re.compile("^[0-9a-z]+$")
 data_format = "%Y/%m/%d %H:%M"
 DELETE_KEYS = [' ', '我', '了', '你', '的']
@@ -20,6 +20,7 @@ def analysis(msg_list):
     day = ''
     month = defaultdict(int)
     hour = defaultdict(int)
+    week = defaultdict(int)
     cut_content = defaultdict(int)
     msg_count = 0
     pictures = 0
@@ -37,6 +38,7 @@ def analysis(msg_list):
         tags = msgs[0].split(',')
         date = datetime.datetime.strptime(tags[2], data_format)
         today = date.strftime('%Y/%m/%d')
+        week[date.weekday() +1 ] += 1
         month[date.month] += 1
         hour[date.hour] += 1
         # if date.hour <= 6 and date.hour >= 4:
@@ -91,6 +93,7 @@ def analysis(msg_list):
                 if m in DELETE_KEYS:
                     continue
                 cut_content[m] += 1
+    day_messages[day] = msg_count
     cut_content = sorted(cut_content.items(), key=lambda d: d[1], reverse=True)
     hour = sorted(hour.items(), key=lambda d: d[0])
     month = sorted(month.items(), key=lambda d: d[0])
@@ -111,6 +114,7 @@ def analysis(msg_list):
     }
     analysis_json['day2msg'] = day_messages
     analysis_json['month'] = month
+    analysis_json['week'] = week
     analysis_json['hour'] = hour
     analysis_json['keywords'] = jieba.analyse.extract_tags(all_msgs,
                                                            topK=50,
